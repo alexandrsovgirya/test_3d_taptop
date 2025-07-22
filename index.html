@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>GLB Scroll Speed</title>
+  <style>
+    body { margin: 0; overflow-x: hidden; }
+    canvas { display: block; }
+    section { height: 300vh; } /* длинная страница для скролла */
+  </style>
+</head>
+<body>
+
+<section></section> <!-- просто чтобы было что скроллить -->
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.1/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.1/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js"></script>
+
+<script>
+  // Сцена, камера, рендер
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 100);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // Камера
+  camera.position.set(0, 1.5, 3);
+
+  // Освещение
+  const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+  scene.add(light);
+
+  // Controls
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+
+  // Загрузка модели
+  const loader = new THREE.GLTFLoader();
+  let mixer;
+  let action;
+
+  loader.load('https://site-77845.taptop.site/f/3dtaptopanimation.glb', function(gltf) {
+    const model = gltf.scene;
+    scene.add(model);
+    model.position.set(0, 0, 0);
+
+    // Настройка анимации
+    mixer = new THREE.AnimationMixer(model);
+    action = mixer.clipAction(gltf.animations[0]);
+    action.play();
+
+    // Управление скоростью через GSAP ScrollTrigger
+    gsap.to(action, {
+      timeScale: 3,
+      ease: "none",
+      scrollTrigger: {
+        trigger: "section",
+        start: "top top",
+        end: "bottom bottom",
+        scrub: true,
+      }
+    });
+  });
+
+  // Часы для анимации
+  const clock = new THREE.Clock();
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta();
+    if (mixer) mixer.update(delta);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  // Адаптация под размер окна
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+
+</body>
+</html>
